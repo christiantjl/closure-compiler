@@ -23,8 +23,6 @@
 
 goog.require('goog.testing.jsunit');
 
-// ./closure-library/closure/bin/build/closurebuilder.py --root ./closure-library/ --root ./test/com/google/javascript/jscomp/runtime_tests/ -n goog.runtime_tests.array_pattern_test
-
 /**
  * Keeps track of how many times numbers() is called.
  * This is used to ensure that the RHS of an array
@@ -288,5 +286,3 @@ function testIterable_default() {
   [a='a', b, c] = gen();
   assertArrayEquals([0, undefined, 2], [a, b, c]);
 }
-
-goog.provide('goog.runtime_tests.array_pattern_test');
