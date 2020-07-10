@@ -5,6 +5,7 @@
   "license": "Apache-2",
   "private": true,
   "devDependencies": {
-    "closure-compiler-npm": "google/closure-compiler-npm"
+    "closure-compiler-npm": "google/closure-compiler-npm",
+    "google-closure-library": "google-closure-library"
   }
 }
