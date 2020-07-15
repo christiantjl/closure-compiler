@@ -14,275 +14,215 @@
  * limitations under the License.
  */
 
-/**
- * @fileoverview
- * Tests transpilation of destructuring array patterns.
- *
- * @author tbreisacher@google.com (Tyler Breisacher)
- */
-
 goog.require('goog.testing.jsunit');
 
-/**
- * Keeps track of how many times numbers() is called.
- * This is used to ensure that the RHS of an array
- * destructuring is not evaluated multiple times.
- * @type {number}
- */
-var callCount;
-
-function setUp() {
-  callCount = 0;
+function testBasic() {
+  var {key: value} = {key: 'value'};
+  assertEquals('value', value);
 }
 
-/** @return {!Array<number>} */
-function numbers() {
-  callCount++;
-  return [1, 2, 3];
-}
-
-function testEmpty() {
-  // No-op, just check that we don't crash.
-  var [] = numbers();
-}
-
-function testVar() {
-  var [a, b, c] = numbers();
-  assertEquals(1, callCount);
-  assertEquals(1, a);
-  assertEquals(2, b);
-  assertEquals(3, c);
-}
-
-function testVar_defaultValue() {
-  var [a, b = 10, c] = numbers();
-  assertEquals(1, callCount);
-  assertEquals(1, a);
-  assertEquals(2, b);
-  assertEquals(3, c);
-
-  var nums = [4, undefined, 6];
-  var [d, e = 10, f] = nums;
-  assertEquals(4, d);
-  assertEquals(10, e);
-  assertEquals(6, f);
-}
-
-function testLet() {
-  let [a, b, c] = numbers();
-  assertEquals(1, callCount);
-  assertEquals(1, a);
-  assertEquals(2, b);
-  assertEquals(3, c);
-}
-
-function testAssign() {
-  var a, b, c;
-  assertEquals(0, callCount);
-  assertEquals(undefined, a);
-  assertEquals(undefined, b);
-  assertEquals(undefined, c);
-
-  [a, b, c] = numbers();
-  assertEquals(1, callCount);
-  assertEquals(1, a);
-  assertEquals(2, b);
-  assertEquals(3, c);
-}
-
-function testConst() {
-  const [a, b, c] = numbers();
-  assertEquals(1, callCount);
-  assertEquals(1, a);
-  assertEquals(2, b);
-  assertEquals(3, c);
-}
-
-function testElision() {
-  let [a, , c] = numbers();
-  assertEquals(1, callCount);
-  assertEquals(1, a);
-  assertEquals(3, c);
-}
-
-function testRest() {
-  let [...rest] = numbers();
-  assertEquals(1, callCount);
-  assertArrayEquals(numbers(), rest);
-}
-
-function testRestArrayPattern() {
-  let [r, ...[e, ...[s, ...t]]] = numbers();
-  assertEquals(1, callCount);
-  assertEquals(r, 1);
-  assertEquals(e, 2);
-  assertEquals(s, 3);
-  assertArrayEquals([], t);
-}
-
-function testRestObjectPattern() {
-  let [a, ...{length: num_rest}] = numbers();
-  assertEquals(1, callCount);
-  assertEquals(a, 1);
-  assertEquals(num_rest, 2);
-}
-
-function testRest2() {
-  let [first, ...rest] = numbers();
-  assertEquals(1, callCount);
-  assertEquals(first, 1);
-  assertArrayEquals([2, 3], rest);
-}
-
-function testRest3() {
-  let [first, second, ...rest] = numbers();
-  assertEquals(1, callCount);
-  assertEquals(first, 1);
-  assertEquals(second, 2);
-  assertArrayEquals([3], rest);
-}
-
-function testWithNameAfter() {
-  var [a, b, c] = numbers(),
-      x = 4;
-  assertEquals(1, callCount);
-  assertEquals(1, a);
-  assertEquals(2, b);
-  assertEquals(3, c);
-  assertEquals(4, x);
-}
-
-function testWithNameBefore() {
-  var x = 4,
-      [a, b, c] = numbers();
-  assertEquals(1, callCount);
-  assertEquals(1, a);
-  assertEquals(2, b);
-  assertEquals(3, c);
-  assertEquals(4, x);
-}
-
-function testWithNameBeforeAndAfter() {
-  var x = 4,
-      [a, b, c] = numbers(),
-      y = 5;
-  assertEquals(1, callCount);
-  assertEquals(1, a);
-  assertEquals(2, b);
-  assertEquals(3, c);
-  assertEquals(4, x);
-  assertEquals(5, y);
-}
-
-function testWithNameBetween() {
-  var [a, b, c] = numbers(),
-      x = 4,
-      [d, e, f] = numbers();
-  assertEquals(2, callCount);
-  assertEquals(1, a);
-  assertEquals(2, b);
-  assertEquals(3, c);
-  assertEquals(4, x);
-  assertEquals(1, d);
-  assertEquals(2, e);
-  assertEquals(3, f);
-}
-
-/** @return {!Array} */
-function nestedNumbers() {
-  return [1, [2, 3]];
-}
-
-/** @return {!Array} */
-function deeplyNestedNumbers() {
-  return [1, [2, [3]]];
+function testShorthand() {
+  var {key} = {key: 'value'};
+  assertEquals('value', key);
 }
 
 function testNested() {
-  var [a, [b, c]] = nestedNumbers();
-
-  assertEquals(1, a);
-  assertEquals(2, b);
-  assertEquals(3, c);
-
-  var [x, [y, [z]]] = deeplyNestedNumbers();
-  assertEquals(1, x);
-  assertEquals(2, y);
-  assertEquals(3, z);
+  var {key1: {key2}} = {key1: {key2: 'value'}};
+  assertEquals('value', key2);
 }
 
-function testReallyNested() {
-  let [[[[[[[[x]]]]]]]] = [[[[[[[[1]]]]]]]];
-
+function testAssign() {
+  var x, y;
+  ({a: x, b: y} = {a: 1, b: 2});
   assertEquals(1, x);
+  assertEquals(2, y);
+}
+
+function testSideEffects() {
+  let callCount = 0;
+
+  /** @return {{a: number, b: number}} */
+  function f() {
+    callCount++;
+    return {a: 1, b: 2};
+  }
+  const {a, b} = f();
+  assertEquals(1, a);
+  assertEquals(2, b);
+  assertEquals(1, callCount);
+}
+
+function testInitializer() {
+  function f() {
+    return {};
+  }
+  var {key1 = 'default'} = f();
+  assertEquals('default', key1);
 }
 
 function testFunction() {
-  function f([x, y]) {
-    assertEquals(5, x);
-    assertEquals(6, y);
+  function f({key: value}) {
+    assertEquals('v', value);
   }
-  f([5, 6]);
+  f({key: 'v'});
+
+  function g(x, {key1: value1, key2: value2}, y) {
+    assertEquals('foo', x);
+    assertEquals('v1', value1);
+    assertEquals('v2', value2);
+    assertEquals('bar', y);
+  }
+  g('foo', {key2: 'v2', key1: 'v1'}, 'bar');
 }
 
 function testFunctionDefault1() {
-  function f([x, y] = [1, 2]) {
-    assertEquals(1, x);
-    assertEquals(2, y);
+  var x = 1;
+  function f({x = 2}) {
+    assertEquals(2, x);
+  }
+  f({});
+}
+
+function testFunctionDefault2() {
+  var x = 1;
+  function f({x = 2}) {
+    assertEquals(3, x);
+  }
+  f({x: 3});
+}
+
+function testFunctionDefault3() {
+  function f({x, y} = {x: 'x', y: 'y'}) {
+    assertEquals('x', x);
+    assertEquals('y', y);
   }
   f();
 }
 
-function testFunctionDefault2() {
-  function f([x, y] = [1, 2]) {
-    assertEquals(3, x);
-    assertEquals(4, y);
+function testFunctionDefault4() {
+  function f({x, y} = {x: 'x', y: 'y'}) {
+    assertEquals('X', x);
+    assertEquals('Y', y);
   }
-  f([3, 4]);
+  f({x: 'X', y: 'Y'});
 }
 
-function testCatch() {
-  try {
-    throw [1,2,3];
-  } catch([x, ...y]) {
-    assertEquals(1, x);
-    assertArrayEquals([2, 3], y);
+function testFunctionDefaultWithRescopedVariable1() {
+  var x = 1;
+  function f({y = x}) {
+    var x = y + '!';
+    assertEquals('3!', x);
   }
+  f({y: 3});
 }
 
-function testIterable() {
-  function *gen() {
-    let i = 0;
-    while (i < 6) {
-      yield i++;
-    }
+function testFunctionDefaultWithRescopedVariable2() {
+  var x = 1;
+  function f({y = x}) {
+    var x = 2;
+    var z = y + '!';
+    assertEquals('1!', z);
   }
-
-  var [a, b, c] = gen();
-  assertArrayEquals([0, 1, 2], [a, b, c]);
-
-  var [first, ...rest] = gen();
-  assertEquals(0, first);
-  assertArrayEquals([1, 2, 3, 4, 5], rest);
+  f({});
 }
 
-function testIterable_default() {
-  /** Yields: 0, undefined, 2, undefined, 4, undefined. */
-  function *gen() {
-    let i = 0;
-    while (i < 6) {
-      if (i % 2 == 0) {
-        yield i;
-      } else {
-        yield undefined;
-      }
-      i++;
-    }
+function testFunctionDefaultWithRescopedVariable3() {
+  var x = 1;
+  function f({ outer : {y = x}}) {
+    var x = y + '!';
+    assertEquals('3!', x);
+  }
+  f({outer: {y: 3}});
+}
+
+function testArrowFunction() {
+  var f = ({key: value}) => assertEquals('v', value);
+  f({key: 'v'});
+
+  var g = (x, {key1: value1, key2: value2}, y) => {
+    assertEquals('foo', x);
+    assertEquals('v1', value1);
+    assertEquals('v2', value2);
+    assertEquals('bar', y);
+  };
+  g('foo', {key2: 'v2', key1: 'v1'}, 'bar');
+}
+
+function testComputedProps() {
+  var {['-']: x} = {['-']: 1};
+  assertEquals(1, x);
+
+  function f({['*']: y}) {
+    assertEquals(2, y);
+  }
+  f({['*']: 2});
+}
+
+function testComputedProps2() {
+  var a = '&';
+  function g({[a]: y}) {
+    let a = y + '!';
+    assertEquals('3!', a);
+  }
+  g({['&']: 3});
+}
+
+function testComputedProps3() {
+  var a = '&';
+  function g({x: {[a]: y}}) {
+    let a = y + '!';
+    assertEquals('3!', a);
+  }
+  g({x: {['&']: 3}});
+}
+
+function testStringKeys() {
+  var {'&': x} = {'&': 1};
+  assertEquals(1, x);
+
+  function f({'&': y}) {
+    assertEquals(2, y);
+  }
+  f({'&': 2});
+}
+
+function testNumericKeys() {
+  var {3.4: x} = {3.4: 'x'};
+  assertEquals('x', x);
+
+  function f({5.6: y}) {
+    assertEquals('y', y);
+  }
+  f({5.6: 'y'});
+}
+
+/**
+ * Make sure that side effects in the param list happen in the right order.
+ */
+function testSideEffectsParamList() {
+  var sideEffects = [];
+  function a() { sideEffects.push('a'); }
+  function b() { sideEffects.push('b'); }
+
+  function f({x = a()}, y = b()) {}
+  f({});
+  assertArrayEquals(['a', 'b'], sideEffects);
+}
+
+function testGetpropAsAssignmentTarget() {
+  var o = {};
+  ({a: o.x} = {a: 1});
+  assertEquals(1, o.x);
+
+  o = {};
+  ({a: o['y']} = {a: 1});
+  assertEquals(1, o['y']);
+
+  for ({length: o.z} in {'123456': 0}) {
+    assertEquals(6, o.z);
   }
 
-  var [a, b='b', c] = gen();
-  assertArrayEquals([0, 'b', 2], [a, b, c]);
-
-  [a='a', b, c] = gen();
-  assertArrayEquals([0, undefined, 2], [a, b, c]);
+  for ({length: o['w']} in {'123456789': 0}) {
+    assertEquals(9, o['w']);
+  }
 }
