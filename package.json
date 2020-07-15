@@ -7,8 +7,5 @@
   "devDependencies": {
     "closure-compiler-npm": "google/closure-compiler-npm",
     "google-closure-library": "latest"
-  },
-  "dependencies": {
-    "closure-builder": "^2.3.8"
   }
 }
