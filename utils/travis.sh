@@ -13,7 +13,7 @@ mvn dependency:go-offline -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.tran
 mvn -Dstyle.color=always install &&
 
 # Execute NPM tests
-./travis_util/test_npm.sh $PROJECT_DIR &&
+./utils/test_npm.sh $PROJECT_DIR &&
 
 # JS builds
 mvn -Dstyle.color=always -pl com.google.javascript:closure-compiler javadoc:javadoc
