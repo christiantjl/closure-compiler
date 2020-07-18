@@ -362,12 +362,12 @@ final class AstFactory {
   }
 
   /**
-   * Creates a new `let` declaration with a type but no value.
+   * Creates a new `let` declaration for a single variable name with a void type and no JSDoc.
    *
    * <p>e.g. `let variableName`
    */
-  Node declareSingleLet(String variableName, JSType type) {
-    return IR.let(createName(variableName, type));
+  Node createSingleLetNameDeclaration(String variableName) {
+    return IR.let(createName(variableName, JSTypeNative.VOID_TYPE));
   }
 
   /**
@@ -774,6 +774,11 @@ final class AstFactory {
     return result;
   }
 
+  /** Creates an assignment expression `lhs = rhs` */
+  Node createAssign(String lhsName, Node rhs) {
+    return createAssign(createName(lhsName, rhs.getJSType()), rhs);
+  }
+
   /**
    * Creates an object-literal with zero or more elements, `{}`.
    *
@@ -880,6 +885,14 @@ final class AstFactory {
 
   Node createSheq(Node expr1, Node expr2) {
     Node result = IR.sheq(expr1, expr2);
+    if (isAddingTypes()) {
+      result.setJSType(getNativeType(JSTypeNative.BOOLEAN_TYPE));
+    }
+    return result;
+  }
+
+  Node createEq(Node expr1, Node expr2) {
+    Node result = IR.eq(expr1, expr2);
     if (isAddingTypes()) {
       result.setJSType(getNativeType(JSTypeNative.BOOLEAN_TYPE));
     }

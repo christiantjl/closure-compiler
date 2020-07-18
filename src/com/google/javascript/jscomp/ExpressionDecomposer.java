@@ -98,10 +98,16 @@ class ExpressionDecomposer {
   private static final int MAX_ITERATIONS = 100;
 
   /**
-   * If required, rewrite the statement containing the expression.
+   * Perform any rewriting necessary so that the specified expression is {@code MOVABLE}.
    *
-   * @param expression The expression to be exposed.
-   * @see #canExposeExpression
+   * <p>This method is a primary entrypoint into this class. It performs expression decomposition
+   * such that {@code expression} can be moved to a preceding statement without changing behaviour.
+   *
+   * <p>Exposing {@code expression} generally doesn't mean that {@code expression} itself will
+   * moved. An expression is exposed within a larger statement if no preceding expression would
+   * interact with it.
+   *
+   * @see {@link #canExposeExpression}
    */
   void maybeExposeExpression(Node expression) {
     // If the expression needs to exposed.
@@ -117,17 +123,10 @@ class ExpressionDecomposer {
   }
 
   /**
-   * Perform any rewriting necessary so that the specified expression is {@code MOVABLE}.
+   * Perform partial decomposition to get the given expression closer to being {@code MOVEABLE}.
    *
-   * <p>This method is a primary entrypoint into this class. It performs a partial expression
-   * decomposition such that {@code expression} can be moved to a preceding statement without
-   * changing behaviour.
-   *
-   * <p>Exposing {@code expression} generally doesn't mean that {@code expression} itself will
-   * moved. An expression is exposed within a larger statement if no preceding expression would
-   * interact with it.
-   *
-   * @see {@link #canExposeExpression}
+   * <p>This method should not be called from outside of this class. Instead call {@link
+   * #maybeExposeExpression(Node)}.
    */
   void exposeExpression(Node expression) {
     Node expressionRoot = findExpressionRoot(expression);
@@ -338,7 +337,7 @@ class ExpressionDecomposer {
       // result is currently `x?.y.z(subExpression)`, but we want it to be the full sub-chain
       // containing subExpression
       // `x?.y.z(subExpression).p.q`
-      result = NodeUtil.getEndOfOptChain(result);
+      result = NodeUtil.getEndOfOptChainSegment(result);
     }
 
     return result;
@@ -457,7 +456,7 @@ class ExpressionDecomposer {
     checkState(NodeUtil.isOptChainNode(optChainNode), optChainNode);
 
     // find the start of the chain & convert it to non-optional
-    final Node optChainStart = NodeUtil.getStartOfOptChain(optChainNode);
+    final Node optChainStart = NodeUtil.getStartOfOptChainSegment(optChainNode);
     optionalToNonOptionalChain(optChainStart);
 
     // Identify or create the statement that will need to go into the if-statement body
